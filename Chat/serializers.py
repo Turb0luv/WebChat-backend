@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.db.models.functions import datetime
 from rest_framework import serializers
-from .models import User, Message
+from .models import Message
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 
@@ -19,14 +19,14 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         if validated_data['password'] != validated_data[
-            'confirmation_password']:
+                                                    'confirmation_password']:
             raise serializers.ValidationError(
                 {"confirmation_password": ["Пароли не совпадают"]})
-        user = User.objects.create_user(username=validated_data['username'],
-                                        password=validated_data['password'])
-        # user.set_password(validated_data['password'])
-        user.save()
-        return user
+        else:
+            user = User.objects.create_user(username=validated_data['username'],
+                                            password=validated_data['password'])
+            user.save()
+            return user
 
 
 class LoginSerializer(serializers.Serializer):
@@ -47,10 +47,11 @@ class LoginSerializer(serializers.Serializer):
                 data['password']):
             token = Token.objects.get_or_create(
                 user=User.objects.get(username=data['username']))
-            return {'user': {'name': data['username'],
+            data = {'user': {'name': data['username'],
                              'id': User.objects.get(
-                                 username=data['username']).id,
-                             'token': token}}
+                                 username=data['username']).id},
+                    'token': str(token[0])}
+            return data
         else:
             raise serializers.ValidationError(
                 {'username': 'Логин или пароль неверны'}
@@ -58,16 +59,18 @@ class LoginSerializer(serializers.Serializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    #user = UserSerializer(read_only=True)
 
     class Meta:
         model = Message
-        fields = ('id', 'user', 'user_name', 'content', 'created_at')
+        fields = ('user_id', 'user_name', 'content', 'created_at')
 
     def create(self, data):
-        message = Message.objects.create(user=data['user'],
-                                         user_name=data['user_name'],
-                                         content=data['content'],
-                                         created_at=datetime.datetime.now())
+        print(data)
+        message = Message.objects.create(
+            user=User.objects.get(id=data['user_id']),
+            user_name=data['user_name'],
+            content=data['content'],
+            created_at=datetime.datetime.now())
         message.save()
         return message
