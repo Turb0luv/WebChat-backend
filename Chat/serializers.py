@@ -58,19 +58,15 @@ class LoginSerializer(serializers.Serializer):
             )
 
 
-class MessageSerializer(serializers.ModelSerializer):
-    #user = UserSerializer(read_only=True)
-
-    class Meta:
-        model = Message
-        fields = ('user_id', 'user_name', 'content', 'created_at')
-
-    def create(self, data):
-        print(data)
-        message = Message.objects.create(
-            user=User.objects.get(id=data['user_id']),
-            user_name=data['user_name'],
-            content=data['content'],
-            created_at=datetime.datetime.now())
-        message.save()
-        return message
+# class MessageSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Message
+#         fields = ('user', 'user_name', 'content')
+#
+#     def create(self, data):
+#         message = Message.objects.create(
+#             user_name=data['user_name'],
+#             content=data['content'],
+#             created_at=datetime.datetime.now())
+#         message.save()
+#         return message
