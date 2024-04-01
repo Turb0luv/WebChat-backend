@@ -57,16 +57,3 @@ class LoginSerializer(serializers.Serializer):
                 {'username': 'Логин или пароль неверны'}
             )
 
-
-# class MessageSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Message
-#         fields = ('user', 'user_name', 'content')
-#
-#     def create(self, data):
-#         message = Message.objects.create(
-#             user_name=data['user_name'],
-#             content=data['content'],
-#             created_at=datetime.datetime.now())
-#         message.save()
-#         return message

@@ -1,43 +1,28 @@
-import datetime
 import json
 
-from channels.generic.websocket import AsyncWebsocketConsumer
-from django.http import JsonResponse
+from channels.generic.websocket import WebsocketConsumer
+from rest_framework.views import APIView
 
-from .models import Message
+from .models import Message, User
 
 
-class MessageConsumer(AsyncWebsocketConsumer):
-    async def connect(self):
-        await self.accept()
+class MessageConsumer(WebsocketConsumer, APIView):
+    def connect(self):
+        self.accept()
 
-    async def receive(self, text_data):
-        data = json.loads(text_data)
-        command = data['command']
-        #print(data)
-        # if command == 'subscribe':
-        #     await self.channel_layer.group_add(
-        #         data['identifier'].split(',')
-        #     )
-        # if command == '':
-        # #     await self.create_message(data)
-        # # if command == 'create_message':
-        # #     await self.create_message(data)
-        # # elif command == 'destroy_message':
-        # #     await self.destroy_message(data)
-        # # elif command == 'edit_message':
-        # #     await self.edit_message(data)
-        # await self.send(json.dumps(Message.objects.all()))
-
-    async def create_message(self, data):
-        if data['content'] != '':
-            message = Message.objects.create(user_id=data['user_id'],
-                                             content=data['content'],
-                                             user_name=data['user_name'],
-                                             created_at=datetime.datetime.now())
-            print(message)
-            message.save()
-            await self.send_message({'message': {'type': 'create', 'message': message.to.dict()}})
+    def receive(self, text_data):
+        data = list(
+            Message.objects.values().order_by('-created_at'))
+        for date in data:
+            date['created_at'] = date['created_at'].isoformat()
+        to_send = json.dumps({
+            'event': 'onmessage',
+            'data': {
+                'message': {
+                    'type': 'connection',
+                    'data': data,
+        }}})
+        self.send(text_data=to_send)
 
     # async def destroy_message(self, data):
     #     message = Message.objects.get(pk=data['message_id'])
@@ -54,5 +39,5 @@ class MessageConsumer(AsyncWebsocketConsumer):
     #     await self.send_message(
     #         {'action': 'edit_message', 'message': message.to_dict()})
     #
-    async def send_message(self, message):
-        await self.send(json.dumps(message))
+    def send_message(self, message):
+        self.send(text_data=message)
