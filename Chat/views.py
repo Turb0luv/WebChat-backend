@@ -1,12 +1,11 @@
 import datetime
-import json
 
-from channels.generic.websocket import WebsocketConsumer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
-from .consumers import MessageConsumer
 from .models import User, Message
 from .serializers import UserSerializer, LoginSerializer
 
@@ -42,18 +41,16 @@ class CreateMessageView(APIView):
                     created_at=datetime.datetime.now())
                 message.save()
                 message_send = Message.objects.filter(id=message.id).values(
-                    'id', 'content', 'user', 'created_at').last()
+                    'id', 'content', 'user_id', 'created_at').last()
                 message_send['created_at'] = message_send['created_at'].isoformat()
                 print(message_send)
-                to_send = json.dumps({
-                    'event': 'onmessage',
-                    'data': {
-                        'message': {
-                            'type': 'create',
-                            'data': message_send,
-                        }}})
-                #Тут надо вызвать send WebsocketConsumer'a
-                print(to_send)
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    'Chat',
+                    {
+                        'type': 'create_message_frontend',
+                        'message': message_send
+                    })
                 return Response(status=status.HTTP_201_CREATED)
             except Message.DoesNotExist:
                 return Response(request.errors,
@@ -67,8 +64,14 @@ class WorkMessageView(APIView):
         try:
             message = Message.objects.get(pk=message_id)
             message.delete()
-            # Тут надо вызвать send_update WebsocketConsumer'a
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'Chat',
+                {
+                    'type': 'send_updates',
+                    'event': 'destroy'
+                })
+            return Response(request.data, status=status.HTTP_204_NO_CONTENT)
         except Message.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -77,6 +80,13 @@ class WorkMessageView(APIView):
             message = Message.objects.get(pk=message_id)
             message.content = request.data['content']
             message.save()
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'Chat',
+                {
+                    'type': 'send_updates',
+                    'event': 'update'
+                })
             return Response(request.data, status=status.HTTP_200_OK)
         except Message.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
