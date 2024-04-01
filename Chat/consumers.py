@@ -44,7 +44,7 @@ class MessageConsumer(WebsocketConsumer):
         event = event['event']
         data = list(
             Message.objects.values('id', 'content', 'user_id',
-                                   'created_at').order_by('-created_at'))
+                                   'created_at').order_by('created_at'))
         for date in data:
             date['created_at'] = date['created_at'].isoformat()
         to_send = json.dumps({

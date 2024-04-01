@@ -7,4 +7,4 @@ class Message(models.Model):
                              verbose_name='user_id')
     user_name = models.CharField(max_length=255, null=False)
     content = models.TextField(null=False)
-    created_at = models.DateTimeField(null=True, auto_now_add=True, )
+    created_at = models.DateTimeField(null=True)
