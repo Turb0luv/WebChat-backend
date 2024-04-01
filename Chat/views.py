@@ -1,10 +1,12 @@
 import datetime
 import json
 
+from channels.generic.websocket import WebsocketConsumer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 
+from .consumers import MessageConsumer
 from .models import User, Message
 from .serializers import UserSerializer, LoginSerializer
 
@@ -28,6 +30,7 @@ class RegisterView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class CreateMessageView(APIView):
     def post(self, request):
         if request.data['content'] != '':
@@ -46,9 +49,10 @@ class CreateMessageView(APIView):
                     'event': 'onmessage',
                     'data': {
                         'message': {
-                            'type': 'connection',
+                            'type': 'create',
                             'data': message_send,
                         }}})
+                #Тут надо вызвать send WebsocketConsumer'a
                 print(to_send)
                 return Response(status=status.HTTP_201_CREATED)
             except Message.DoesNotExist:
@@ -63,6 +67,7 @@ class WorkMessageView(APIView):
         try:
             message = Message.objects.get(pk=message_id)
             message.delete()
+            # Тут надо вызвать send_update WebsocketConsumer'a
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Message.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -72,7 +77,7 @@ class WorkMessageView(APIView):
             message = Message.objects.get(pk=message_id)
             message.content = request.data['content']
             message.save()
-            return Response(request.data,status=status.HTTP_200_OK)
+            return Response(request.data, status=status.HTTP_200_OK)
         except Message.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
