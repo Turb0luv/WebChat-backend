@@ -73,24 +73,22 @@ class CreateMessageView(APIView):
         else:
             return Response(request.data, status=status.HTTP_204_NO_CONTENT)
 
-# class DestroyMessageView(APIView):
-#     def delete(self, request, message_id):
-#         try:
-#             message = Message.objects.get(pk=message_id)
-#             message.delete()
-#             return Response(status=status.HTTP_204_NO_CONTENT)
-#         except Message.DoesNotExist:
-#             return Response(status=status.HTTP_404_NOT_FOUND)
-#
-#
-# class EditMessageView(APIView):
-#     def patch(self, request, message_id):
-#         try:
-#             message = Message.objects.get(pk=message_id)
-#             serializer = MessageSerializer(message, data=request.data, partial=True)
-#             if serializer.is_valid():
-#                 serializer.save()
-#                 return Response(serializer.data, status=status.HTTP_200_OK)
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#         except Message.DoesNotExist:
-#             return Response(status=status.HTTP_404_NOT_FOUND)
+
+class WorkMessageView(APIView):
+    def delete(self, request, message_id):
+        try:
+            message = Message.objects.get(pk=message_id)
+            message.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Message.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request, message_id):
+        try:
+            message = Message.objects.get(pk=message_id)
+            message.content = request.data['content']
+            message.save()
+            return Response(request.data,status=status.HTTP_200_OK)
+        except Message.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+

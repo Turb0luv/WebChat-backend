@@ -25,8 +25,6 @@ application = ProtocolTypeRouter({
     'websocket': AuthMiddlewareStack(
         URLRouter([
             path('cable/', MessageConsumer.as_asgi()),
-            path('messages/', MessageConsumer.as_asgi()),
-            # path('ws/', MessageConsumer.as_asgi())
         ])
     )
 })

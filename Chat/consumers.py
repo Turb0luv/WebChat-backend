@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from .models import Message, User
 
 
-class MessageConsumer(WebsocketConsumer, APIView):
+class MessageConsumer(WebsocketConsumer):
     def connect(self):
         self.accept()
 
