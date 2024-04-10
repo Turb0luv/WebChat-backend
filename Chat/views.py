@@ -42,10 +42,9 @@ class CreateMessageView(APIView):
                     created_at=datetime.datetime.now())
                 message.save()
                 message_send = Message.objects.filter(id=message.id).values(
-                    'id', 'content', 'user_id', 'created_at').last()
+                    'id', 'content', 'user_name', 'user_id', 'created_at').last()
                 message_send['created_at'] = message_send[
                     'created_at'].isoformat()
-                print(message_send)
                 channel_layer = get_channel_layer()
                 async_to_sync(channel_layer.group_send)(
                     'Chat',
@@ -78,22 +77,23 @@ class WorkMessageView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, message_id):
-        try:
-            message = Message.objects.get(pk=message_id)
-            message.content = request.data['content']
-            message.save()
-            msg = {'id': message.id,
-                   'user_id': request.data['user_id'],
-                   'user_name': message.user_name,
-                   'content': message.content,
-                   'created_at': message.created_at}
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                'Chat',
-                {
-                    'type': 'send_updates',
-                    'event': 'update'
-                })
-            return Response(msg, status=status.HTTP_200_OK)
-        except Message.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        if request.data['content'] != '':
+            try:
+                message = Message.objects.get(pk=message_id)
+                message.content = request.data['content']
+                message.save()
+                msg = {'id': message.id,
+                       'user_id': request.data['user_id'],
+                       'user_name': message.user_name,
+                       'content': message.content,
+                       'created_at': message.created_at}
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    'Chat',
+                    {
+                        'type': 'send_updates',
+                        'event': 'update'
+                    })
+                return Response(msg, status=status.HTTP_200_OK)
+            except Message.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)

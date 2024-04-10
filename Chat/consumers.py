@@ -43,7 +43,7 @@ class MessageConsumer(WebsocketConsumer):
     def send_updates(self, event):
         event = event['event']
         data = list(
-            Message.objects.values('id', 'content', 'user_id',
+            Message.objects.values('id', 'content', 'user_name', 'user_id',
                                    'created_at').order_by('created_at'))
         for date in data:
             date['created_at'] = date['created_at'].isoformat()
