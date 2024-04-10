@@ -97,3 +97,5 @@ class WorkMessageView(APIView):
                 return Response(msg, status=status.HTTP_200_OK)
             except Message.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
